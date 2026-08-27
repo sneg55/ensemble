@@ -29,7 +29,14 @@ const els = Object.fromEntries(
   ].map((id) => [id, document.getElementById(id)])
 );
 
-const state = { origin: null, catalog: [], look: null, photo: null, apiKey: null };
+const state = {
+  origin: null,
+  catalog: [],
+  catalogsByStore: {},
+  look: null,
+  photo: null,
+  apiKey: null
+};
 
 async function init() {
   const stored = await getConfig(["look", "photo", "apiKey"]);
