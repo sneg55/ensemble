@@ -3,3 +3,4 @@ node_modules/
 docs/SPEC.md
 docs/NOTES.md
 .harness/ledger.jsonl
+.wrangler/
