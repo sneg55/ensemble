@@ -30,11 +30,14 @@
       return true;
     }
     if (msg.type === "addToCart") {
-      fetch("/cart/add.js", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ items: msg.items })
-      })
+      resolveAvailable(msg.items)
+        .then((items) =>
+          fetch("/cart/add.js", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Accept: "application/json" },
+            body: JSON.stringify({ items: items.map((i) => ({ id: i.id, quantity: i.quantity })) })
+          })
+        )
         .then(async (res) =>
           sendResponse({ ok: res.ok, status: res.status, body: (await res.text()).slice(0, 500) })
         )
@@ -43,6 +46,36 @@
     }
     return false;
   });
+
+  async function resolveAvailable(items) {
+    const resolved = [];
+    for (const item of items) {
+      if (!item.handle) {
+        resolved.push(item);
+        continue;
+      }
+      try {
+        const res = await fetch(`/products/${item.handle}.js`, {
+          headers: { Accept: "application/json" }
+        });
+        if (!res.ok) {
+          resolved.push(item);
+          continue;
+        }
+        const product = await res.json();
+        const chosen = product.variants.find((v) => v.id === item.id);
+        if (chosen && chosen.available) {
+          resolved.push(item);
+        } else {
+          const alt = product.variants.find((v) => v.available);
+          resolved.push(alt ? { ...item, id: alt.id } : item);
+        }
+      } catch {
+        resolved.push(item);
+      }
+    }
+    return resolved;
+  }
 
   async function fetchAllProducts(pages) {
     const all = [];
