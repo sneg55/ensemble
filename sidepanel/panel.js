@@ -63,11 +63,15 @@ async function init() {
           for (const b of els["store-state"].children) {
             b.className = b === btn ? "store active" : "store";
           }
+          if (!state.catalog.length) loadCatalog(o);
         });
         return btn;
       })
     );
     els["catalog-section"].hidden = false;
+    if (state.origin && !(state.catalogsByStore[state.origin] || []).length) {
+      loadCatalog(state.origin);
+    }
   } else {
     els["store-state"].textContent = "No Shopify store detected on this tab";
   }
@@ -117,21 +121,28 @@ function visibleCatalog() {
   return state.catalog.filter((p) => p.title.toLowerCase().includes(q)).slice(0, 60);
 }
 
-els["load-catalog"].addEventListener("click", async () => {
+async function loadCatalog(origin) {
   await busy(els["load-catalog"], "Loading...", async () => {
     setStatus("Loading catalog...");
     const res = await chrome.runtime.sendMessage({
       type: "panelFetchCatalog",
-      origin: state.origin,
+      origin,
       pages: 2
     });
     if (!res || !res.ok) return setStatus(`Catalog failed: ${(res && res.error) || "no response"}`);
-    state.catalog = extractProducts(res.products, state.origin);
-    state.catalogsByStore[state.origin] = state.catalog;
-    setStatus(`${state.catalog.length} products loaded`);
-    renderCatalog(visibleCatalog());
+    const products = extractProducts(res.products, origin);
+    state.catalogsByStore[origin] = products;
+    if (state.origin === origin) {
+      state.catalog = products;
+      renderCatalog(visibleCatalog());
+    }
+    setStatus(`${products.length} products loaded`);
     renderHints();
   });
+}
+
+els["load-catalog"].addEventListener("click", () => {
+  if (state.origin) loadCatalog(state.origin);
 });
 
 els["catalog-search"].addEventListener("input", () => renderCatalog(visibleCatalog()));
