@@ -125,3 +125,32 @@ button:disabled {
   background: var(--accent);
   color: #fff;
 }
+.render-card {
+  position: relative;
+  margin-top: 8px;
+}
+.render-card img {
+  width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+  background: #f4f4f4;
+  border-radius: 10px;
+  display: block;
+}
+.render-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 2px 8px;
+}
+.render-save {
+  position: absolute;
+  top: 6px;
+  right: 40px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 12px;
+  text-decoration: none;
+}
