@@ -1,12 +1,34 @@
-import { extractProducts, firstAvailableVariant, lookTotalByStore, groupItemsByStore, catalogSummaryForPrompt } from "../lib/shopify.js";
-import { newLook, addItem, removeItem } from "../lib/looks.js";
 import { renderLook, suggestMatches } from "../lib/gemini.js";
+import { addItem, newLook, removeItem } from "../lib/looks.js";
+import {
+  catalogSummaryForPrompt,
+  extractProducts,
+  firstAvailableVariant,
+  groupItemsByStore,
+  lookTotalByStore
+} from "../lib/shopify.js";
 
-const els = Object.fromEntries(["store-state", "photo-preview", "photo-input", "catalog-section", "catalog-search",
-  "load-catalog", "catalog-grid", "look-items", "look-total", "suggest", "render", "add-to-carts",
-  "suggestions", "renders", "status"].map((id) => [id, document.getElementById(id)]));
+const els = Object.fromEntries(
+  [
+    "store-state",
+    "photo-preview",
+    "photo-input",
+    "catalog-section",
+    "catalog-search",
+    "load-catalog",
+    "catalog-grid",
+    "look-items",
+    "look-total",
+    "suggest",
+    "render",
+    "add-to-carts",
+    "suggestions",
+    "renders",
+    "status"
+  ].map((id) => [id, document.getElementById(id)])
+);
 
-let state = { origin: null, catalog: [], look: null, photo: null, apiKey: null };
+const state = { origin: null, catalog: [], look: null, photo: null, apiKey: null };
 
 async function init() {
   const stored = await chrome.storage.local.get(["look", "photo", "apiKey"]);
@@ -42,8 +64,12 @@ els["photo-input"].addEventListener("change", () => {
 
 els["load-catalog"].addEventListener("click", async () => {
   setStatus("Loading catalog...");
-  const res = await chrome.runtime.sendMessage({ type: "panelFetchCatalog", origin: state.origin, pages: 2 });
-  if (!res || !res.ok) return setStatus(`Catalog failed: ${res && res.error || "no response"}`);
+  const res = await chrome.runtime.sendMessage({
+    type: "panelFetchCatalog",
+    origin: state.origin,
+    pages: 2
+  });
+  if (!res || !res.ok) return setStatus(`Catalog failed: ${(res && res.error) || "no response"}`);
   state.catalog = extractProducts(res.products, state.origin);
   setStatus(`${state.catalog.length} products loaded`);
   renderCatalog(state.catalog.slice(0, 60));
@@ -67,31 +93,39 @@ function productCard(product, actionLabel, onAction) {
 }
 
 function renderCatalog(products) {
-  els["catalog-grid"].replaceChildren(...products.map((p) => productCard(p, "+", async (product, variant) => {
-    state.look = addItem(state.look, product, variant);
-    await persistLook();
-    renderLookSection();
-  })));
+  els["catalog-grid"].replaceChildren(
+    ...products.map((p) =>
+      productCard(p, "+", async (product, variant) => {
+        state.look = addItem(state.look, product, variant);
+        await persistLook();
+        renderLookSection();
+      })
+    )
+  );
 }
 
 function renderLookSection() {
-  els["look-items"].replaceChildren(...state.look.items.map((item) => {
-    const card = document.createElement("div");
-    card.className = "card";
-    card.innerHTML = `<img src="${item.image}" alt=""><div class="meta">${item.title}<div class="price">$${item.price} · ${new URL(item.storeOrigin).host}</div></div>`;
-    const btn = document.createElement("button");
-    btn.textContent = "x";
-    btn.addEventListener("click", async () => {
-      state.look = removeItem(state.look, item.variantId);
-      await persistLook();
-      renderLookSection();
-    });
-    card.appendChild(btn);
-    return card;
-  }));
+  els["look-items"].replaceChildren(
+    ...state.look.items.map((item) => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `<img src="${item.image}" alt=""><div class="meta">${item.title}<div class="price">$${item.price} · ${new URL(item.storeOrigin).host}</div></div>`;
+      const btn = document.createElement("button");
+      btn.textContent = "x";
+      btn.addEventListener("click", async () => {
+        state.look = removeItem(state.look, item.variantId);
+        await persistLook();
+        renderLookSection();
+      });
+      card.appendChild(btn);
+      return card;
+    })
+  );
   const totals = lookTotalByStore(state.look.items);
   const grand = Object.values(totals).reduce((a, b) => a + b, 0);
-  els["look-total"].textContent = state.look.items.length ? `$${grand.toFixed(2)} across ${Object.keys(totals).length} store(s)` : "";
+  els["look-total"].textContent = state.look.items.length
+    ? `$${grand.toFixed(2)} across ${Object.keys(totals).length} store(s)`
+    : "";
 }
 
 async function persistLook() {
@@ -102,13 +136,21 @@ els["suggest"].addEventListener("click", async () => {
   if (!requireKey() || !state.catalog.length) return setStatus("Load a catalog first");
   setStatus("Styling...");
   try {
-    const handles = await suggestMatches(state.look.items.map((i) => i.title), catalogSummaryForPrompt(state.catalog), state.apiKey);
+    const handles = await suggestMatches(
+      state.look.items.map((i) => i.title),
+      catalogSummaryForPrompt(state.catalog),
+      state.apiKey
+    );
     const picks = state.catalog.filter((p) => handles.includes(p.handle));
-    els["suggestions"].replaceChildren(...picks.map((p) => productCard(p, "+", async (product, variant) => {
-      state.look = addItem(state.look, product, variant);
-      await persistLook();
-      renderLookSection();
-    })));
+    els["suggestions"].replaceChildren(
+      ...picks.map((p) =>
+        productCard(p, "+", async (product, variant) => {
+          state.look = addItem(state.look, product, variant);
+          await persistLook();
+          renderLookSection();
+        })
+      )
+    );
     setStatus(picks.length ? `${picks.length} suggestion(s)` : "No matches suggested");
   } catch (e) {
     setStatus(String(e));
@@ -122,7 +164,12 @@ els["render"].addEventListener("click", async () => {
   setStatus("Rendering look on you...");
   try {
     const itemImages = await Promise.all(state.look.items.map((i) => toDataUrl(i.image)));
-    const rendered = await renderLook(state.photo, itemImages, state.look.items.map((i) => i.title), state.apiKey);
+    const rendered = await renderLook(
+      state.photo,
+      itemImages,
+      state.look.items.map((i) => i.title),
+      state.apiKey
+    );
     const img = document.createElement("img");
     img.src = rendered;
     els["renders"].prepend(img);
@@ -142,7 +189,9 @@ els["add-to-carts"].addEventListener("click", async () => {
       origin,
       items: items.map((i) => ({ id: i.variantId, quantity: 1 }))
     });
-    lines.push(`${new URL(origin).host}: ${res && res.ok ? `${items.length} item(s) in cart` : `failed (${res && (res.status || res.error)}) ${res && res.body ? res.body : ""}`}`);
+    lines.push(
+      `${new URL(origin).host}: ${res && res.ok ? `${items.length} item(s) in cart` : `failed (${res && (res.status || res.error)}) ${res && res.body ? res.body : ""}`}`
+    );
   }
   setStatus(lines.join("\n"));
 });

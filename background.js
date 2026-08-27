@@ -4,7 +4,9 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
   if (msg.type === "shopifyDetected" && sender.tab) {
     shopifyTabs.set(sender.tab.id, msg.origin);
     chrome.storage.local.get("knownStores").then(({ knownStores }) => {
-      chrome.storage.local.set({ knownStores: { ...(knownStores || {}), [msg.origin]: Date.now() } });
+      chrome.storage.local.set({
+        knownStores: { ...(knownStores || {}), [msg.origin]: Date.now() }
+      });
     });
     chrome.action.setBadgeText({ tabId: sender.tab.id, text: "ON" });
     chrome.action.setBadgeBackgroundColor({ tabId: sender.tab.id, color: "#7A1F2B" });

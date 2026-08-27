@@ -1,10 +1,18 @@
-import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { extractProducts, firstAvailableVariant, lookTotalByStore, groupItemsByStore, catalogSummaryForPrompt } from "../lib/shopify.js";
-import { newLook, addItem, removeItem } from "../lib/looks.js";
+import { test } from "node:test";
+import { addItem, newLook, removeItem } from "../lib/looks.js";
+import {
+  catalogSummaryForPrompt,
+  extractProducts,
+  firstAvailableVariant,
+  groupItemsByStore,
+  lookTotalByStore
+} from "../lib/shopify.js";
 
-const fixture = JSON.parse(readFileSync(new URL("./fixtures/princesspolly-products.json", import.meta.url)));
+const fixture = JSON.parse(
+  readFileSync(new URL("./fixtures/princesspolly-products.json", import.meta.url))
+);
 const origin = "https://us.princesspolly.com";
 
 test("extractProducts maps real catalog rows", () => {
@@ -20,7 +28,12 @@ test("extractProducts maps real catalog rows", () => {
 });
 
 test("firstAvailableVariant prefers available", () => {
-  const p = { variants: [{ id: 1, available: false }, { id: 2, available: true }] };
+  const p = {
+    variants: [
+      { id: 1, available: false },
+      { id: 2, available: true }
+    ]
+  };
   assert.equal(firstAvailableVariant(p).id, 2);
 });
 
