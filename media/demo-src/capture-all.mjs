@@ -138,8 +138,6 @@ async function stopRec(ctx, page, rec) {
   }
 }
 
-const shadowEval = (page, expr) =>
-  page.evaluate(`(() => { const sr = ${srFinder}(); return sr ? (${expr}) : null })()`);
 const waitShadow = (page, expr, timeout = 120000) =>
   page.waitForFunction(
     `(() => { const sr = ${srFinder}(); return sr ? Boolean(${expr}) : false })()`,
