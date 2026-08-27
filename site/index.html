@@ -245,5 +245,39 @@ footer a{color:var(--muted)}
   </div>
 </footer>
 
+<script>
+(() => {
+  if (!document.modelContext && navigator.modelContext) document.modelContext = navigator.modelContext;
+  if (!document.modelContext || typeof document.modelContext.registerTool !== "function") return;
+  const demoLook = {
+    items: [
+      { title: "Picco Ultra Low Rise Wide Leg Jeans Light Blue Wash", store: "us.princesspolly.com", price: "85.00", variant: "US 2" },
+      { title: "Sherah Halter Neck Corset Top White", store: "us.princesspolly.com", price: "55.00", variant: "US 0" },
+      { title: "Women's Wool Runner NZ Mid Waterproof Natural Black", store: "www.allbirds.com", price: "160.00", variant: "Size 5" }
+    ],
+    totals: { "us.princesspolly.com": "140.00", "www.allbirds.com": "160.00", combined: "300.00" }
+  };
+  document.modelContext.registerTool({
+    name: "get_ensemble",
+    description: "What Ensemble is, what it does on Shopify stores, and how to install and run it.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+    execute: async () => ({
+      content: [{
+        type: "text",
+        text: "Ensemble is a Chrome extension that composes a purchasable look across Shopify stores through the WebMCP tools the stores themselves register (search_catalog, get_product, update_cart, get_cart). It renders the look on the shopper's own photo with their Gemini key, suggests matches from live catalogs, and fills every store's cart with exact variants; checkout stays native per store. Install: download https://ensemble-dhf.pages.dev/ensemble.zip (or clone https://github.com/sneg55/ensemble), load it unpacked at chrome://extensions with Developer mode on, paste a free Gemini API key in the options, then visit any Shopify store. There is no server; the photo and key stay in local extension storage."
+      }]
+    })
+  });
+  document.modelContext.registerTool({
+    name: "get_demo_look",
+    description: "The cross-store demo look from the Ensemble video: each item, its store, price, and selected variant, with per-store and combined totals.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+    execute: async () => ({
+      content: [{ type: "text", text: JSON.stringify(demoLook) }],
+      structuredContent: demoLook
+    })
+  });
+})();
+</script>
 </body>
 </html>

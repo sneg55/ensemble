@@ -48,6 +48,11 @@ Storefronts that register nothing fall back to the public catalog and cart endpo
 (`/products.json`, `/cart/add.js`), so the same flows work everywhere; the WebMCP path
 is preferred whenever the store offers it.
 
+Ensemble also contributes surface back: the site at ensemble-dhf.pages.dev registers
+two WebMCP tools of its own via `document.modelContext.registerTool` (`get_ensemble`
+and `get_demo_look`), so an agent visiting the live URL with WebMCP enabled can query
+the project and the demo look directly.
+
 ## Features
 
 - Side panel: your photo, store chips for every Shopify store visited this session,
