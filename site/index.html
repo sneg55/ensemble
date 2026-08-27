@@ -35,6 +35,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0
 nav .links{display:flex;gap:26px;align-items:center}
 nav .links a{color:var(--muted);text-decoration:none;font-size:14px;font-weight:500}
 nav .links a:hover{color:var(--ink)}
+nav .links a.btn,nav .links a.btn:hover{color:#fff}
 .btn{display:inline-block;background:var(--maroon);color:#fff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 24px;border-radius:999px;transition:background .15s}
 .btn:hover{background:var(--maroon-dark)}
 .btn.small{padding:9px 18px;font-size:14px}
@@ -65,7 +66,7 @@ h2{font-family:var(--serif);font-weight:600;font-size:clamp(26px,3.2vw,38px);lin
 .shot{background:var(--paper);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 30px 70px -40px rgba(60,20,35,.4)}
 .shot figcaption{padding:14px 18px;font-size:14px;color:var(--muted);border-top:1px solid var(--line)}
 .shot figcaption strong{color:var(--ink);font-weight:600}
-.duo{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:8px}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:8px;align-items:center}
 .split{display:grid;grid-template-columns:5fr 4fr;gap:56px;align-items:center}
 .split ul{list-style:none;margin-top:20px}
 .split li{padding-left:26px;position:relative;margin-bottom:14px;font-size:15px;color:var(--muted)}
@@ -172,11 +173,11 @@ footer a{color:var(--muted)}
   <p class="section-lede">No panel required. Hover any product tile for two buttons: Render on me and Suggest matches. On a product page, the pill picks up the exact size and color you selected.</p>
   <div class="duo">
     <figure class="shot">
-      <img src="img/ov-render.jpg" alt="A product page with an Ensemble modal showing the shopper rendered wearing the jeans from that page" width="1280" height="900">
+      <img src="img/shot-render.jpg" alt="The Ensemble modal on a product page, showing the shopper rendered wearing the jeans from that page" width="552" height="732">
       <figcaption><strong>Render on me.</strong> The jeans from this page, on your photo, without leaving the store.</figcaption>
     </figure>
     <figure class="shot">
-      <img src="img/ov-suggest.jpg" alt="A product page with an Ensemble modal suggesting a corset top, jacket, sandals and belt that go with the jeans" width="1280" height="900">
+      <img src="img/shot-suggest.jpg" alt="The Ensemble modal suggesting a corset top, jacket, sandals and belt that go with the jeans" width="556" height="288">
       <figcaption><strong>Suggest matches.</strong> Pieces from the store's live inventory that complete the outfit, each one click from the look.</figcaption>
     </figure>
   </div>
@@ -194,7 +195,7 @@ footer a{color:var(--muted)}
       </ul>
     </div>
     <figure class="shot">
-      <img src="img/look.jpg" alt="The Ensemble side panel showing a look with a dress and sneakers from two stores and a combined total" width="1280" height="640">
+      <img src="img/panel-look.jpg" alt="The Ensemble side panel showing a look with a dress and sneakers from two stores" width="440" height="600">
       <figcaption><strong>$229.00 across 2 stores.</strong> A dress from one catalog, wool runners from another.</figcaption>
     </figure>
   </div>
