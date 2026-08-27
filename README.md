@@ -1,5 +1,11 @@
 # Ensemble
 
+[![ci](https://github.com/sneg55/ensemble/actions/workflows/ci.yml/badge.svg)](https://github.com/sneg55/ensemble/actions/workflows/ci.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-7b1e3a)](LICENSE)
+[![site](https://img.shields.io/badge/site-ensemble--dhf.pages.dev-7b1e3a)](https://ensemble-dhf.pages.dev)
+[![chrome](https://img.shields.io/badge/chrome-manifest_v3-555)](#install-developer-mode)
+[![WebMCP](https://img.shields.io/badge/built_on-WebMCP-2ea44f)](https://github.com/webmachinelearning/webmcp)
+
 Compose a purchasable look across Shopify stores. Ensemble is a Chrome extension: browse
 any Shopify store, pull its real catalog, mix and match items into one look (from one
 store or several), see the look rendered on your own photo, get style suggestions from
