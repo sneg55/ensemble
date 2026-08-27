@@ -24,6 +24,9 @@ purchasable: real variants, a real total, carts filled across every store involv
 3. Visit any Shopify store. The badge shows ON; click the toolbar icon to open the
    side panel.
 4. Set your photo, load the catalog, build the look, render it, add all to carts.
+5. Every Shopify store you visit appears as a store chip in the panel; switch chips to
+   browse each store's catalog, and style suggestions draw from every catalog you have
+   loaded this session, so a look can mix stores.
 
 Your photo never leaves your machine except inside the render request to Google's
 Gemini API. Nothing is stored server-side; there is no server.
