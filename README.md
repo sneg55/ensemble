@@ -56,8 +56,8 @@ is preferred whenever the store offers it.
 3. Visit any Shopify store. Click the toolbar icon to open the side panel, or hover a
    product tile and use the overlay directly.
 
-For the full WebMCP experience run Chrome with `--enable-features=WebMCP`; without the
-flag the shim path above keeps every feature working on stock Chrome.
+To use the native WebMCP API directly, run Chrome with `--enable-features=WebMCP`.
+Without the flag the shim path above keeps every feature working on stock Chrome.
 
 ## Privacy
 
