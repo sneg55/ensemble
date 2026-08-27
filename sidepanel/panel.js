@@ -1,3 +1,4 @@
+import { getConfig, setLook, setPhoto } from "../lib/config.js";
 import { renderLook, suggestMatches } from "../lib/gemini.js";
 import { addItem, newLook, removeItem } from "../lib/looks.js";
 import {
@@ -31,7 +32,7 @@ const els = Object.fromEntries(
 const state = { origin: null, catalog: [], look: null, photo: null, apiKey: null };
 
 async function init() {
-  const stored = await chrome.storage.local.get(["look", "photo", "apiKey"]);
+  const stored = await getConfig(["look", "photo", "apiKey"]);
   state.look = stored.look || newLook("My look");
   state.photo = stored.photo || null;
   state.apiKey = stored.apiKey || null;
@@ -56,7 +57,7 @@ els["photo-input"].addEventListener("change", () => {
   const reader = new FileReader();
   reader.onload = async () => {
     state.photo = reader.result;
-    await chrome.storage.local.set({ photo: state.photo });
+    await setPhoto(state.photo);
     showPhoto();
   };
   reader.readAsDataURL(file);
@@ -129,7 +130,7 @@ function renderLookSection() {
 }
 
 async function persistLook() {
-  await chrome.storage.local.set({ look: state.look });
+  await setLook(state.look);
 }
 
 els["suggest"].addEventListener("click", async () => {
@@ -183,17 +184,29 @@ els["add-to-carts"].addEventListener("click", async () => {
   const groups = groupItemsByStore(state.look.items);
   if (!Object.keys(groups).length) return setStatus("Look is empty");
   const lines = [];
+  setStatus("Adding to carts...");
   for (const [origin, items] of Object.entries(groups)) {
-    const res = await chrome.runtime.sendMessage({
-      type: "panelAddToCart",
-      origin,
-      items: items.map((i) => ({ id: i.variantId, quantity: 1 }))
-    });
-    lines.push(
-      `${new URL(origin).host}: ${res && res.ok ? `${items.length} item(s) in cart` : `failed (${res && (res.status || res.error)}) ${res && res.body ? res.body : ""}`}`
-    );
+    let line;
+    try {
+      const res = await chrome.runtime.sendMessage({
+        type: "panelAddToCart",
+        origin,
+        items: items.map((i) => ({ id: i.variantId, quantity: 1 }))
+      });
+      if (res && res.ok) {
+        line = `${new URL(origin).host}: ${items.length} item(s) in cart`;
+      } else {
+        const detail = res
+          ? res.error || `${res.status} ${String(res.body || "").slice(0, 120)}`
+          : "no response";
+        line = `${new URL(origin).host}: failed (${detail})`;
+      }
+    } catch (e) {
+      line = `${new URL(origin).host}: failed (${e.message})`;
+    }
+    lines.push(line);
+    setStatus(lines.join("\n"));
   }
-  setStatus(lines.join("\n"));
 });
 
 async function toDataUrl(url) {

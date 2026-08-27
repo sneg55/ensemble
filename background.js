@@ -1,3 +1,5 @@
+import { recordKnownStore } from "./lib/config.js";
+
 const shopifyTabs = new Map();
 
 chrome.runtime.onMessage.addListener((msg, sender) => {
