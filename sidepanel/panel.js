@@ -39,8 +39,24 @@ async function init() {
   if (state.photo) showPhoto();
   const { origin } = await chrome.runtime.sendMessage({ type: "activeShopifyOrigin" });
   state.origin = origin;
-  if (origin) {
-    els["store-state"].textContent = new URL(origin).host;
+  const known = Object.keys(await getKnownStores());
+  if (origin && !known.includes(origin)) known.push(origin);
+  if (known.length) {
+    els["store-state"].replaceChildren(
+      ...known.map((o) => {
+        const btn = document.createElement("button");
+        btn.textContent = new URL(o).host;
+        btn.className = o === state.origin ? "store active" : "store";
+        btn.addEventListener("click", () => {
+          state.origin = o;
+          state.catalog = state.catalogsByStore[o] || [];
+          renderCatalog(state.catalog.slice(0, 60));
+          for (const b of els["store-state"].children)
+            b.className = b === btn ? "store active" : "store";
+        });
+        return btn;
+      })
+    );
     els["catalog-section"].hidden = false;
   }
   renderLookSection();
@@ -72,6 +88,7 @@ els["load-catalog"].addEventListener("click", async () => {
   });
   if (!res || !res.ok) return setStatus(`Catalog failed: ${(res && res.error) || "no response"}`);
   state.catalog = extractProducts(res.products, state.origin);
+  state.catalogsByStore[state.origin] = state.catalog;
   setStatus(`${state.catalog.length} products loaded`);
   renderCatalog(state.catalog.slice(0, 60));
 });

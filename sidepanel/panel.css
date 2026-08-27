@@ -116,3 +116,12 @@ button:disabled {
   font-weight: 600;
   margin-left: auto;
 }
+#store-state button.store {
+  background: #eee;
+  color: #333;
+  margin-left: 4px;
+}
+#store-state button.store.active {
+  background: var(--accent);
+  color: #fff;
+}
