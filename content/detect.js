@@ -30,22 +30,49 @@
       return true;
     }
     if (msg.type === "addToCart") {
-      resolveAvailable(msg.items)
-        .then((items) =>
-          fetch("/cart/add.js", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Accept: "application/json" },
-            body: JSON.stringify({ items: items.map((i) => ({ id: i.id, quantity: i.quantity })) })
-          })
-        )
-        .then(async (res) =>
-          sendResponse({ ok: res.ok, status: res.status, body: (await res.text()).slice(0, 500) })
-        )
+      addWithFallback(msg.items)
+        .then(sendResponse)
         .catch((e) => sendResponse({ ok: false, error: String(e) }));
       return true;
     }
     return false;
   });
+
+  async function postItems(items) {
+    const res = await fetch("/cart/add.js", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ items: items.map((i) => ({ id: i.id, quantity: i.quantity })) })
+    });
+    return { ok: res.ok, status: res.status, body: (await res.text()).slice(0, 500) };
+  }
+
+  async function addWithFallback(rawItems) {
+    const items = await resolveAvailable(rawItems);
+    const first = await postItems(items);
+    if (first.ok || first.status !== 422) return first;
+    let added = 0;
+    const failures = [];
+    for (const item of items) {
+      const candidates = [item.id, ...(item.altIds || []).filter((id) => id !== item.id)];
+      let landed = false;
+      for (const id of candidates) {
+        const res = await postItems([{ id, quantity: item.quantity }]);
+        if (res.ok) {
+          added += 1;
+          landed = true;
+          break;
+        }
+        if (res.status !== 422) break;
+      }
+      if (!landed) failures.push(item.handle || item.id);
+    }
+    return {
+      ok: added > 0 && failures.length === 0,
+      status: failures.length ? 422 : 200,
+      body: `${added} added${failures.length ? `, sold out: ${failures.join(", ")}` : ""}`
+    };
+  }
 
   async function resolveAvailable(items) {
     const resolved = [];

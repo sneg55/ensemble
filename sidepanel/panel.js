@@ -215,7 +215,12 @@ els["add-to-carts"].addEventListener("click", async () => {
       const res = await chrome.runtime.sendMessage({
         type: "panelAddToCart",
         origin,
-        items: items.map((i) => ({ id: i.variantId, quantity: 1, handle: i.handle }))
+        items: items.map((i) => ({
+          id: i.variantId,
+          quantity: 1,
+          handle: i.handle,
+          altIds: i.variantIds || []
+        }))
       });
       if (res && res.ok) {
         line = `${new URL(origin).host}: ${items.length} item(s) in cart`;
