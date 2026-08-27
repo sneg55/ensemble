@@ -30,13 +30,91 @@
       return true;
     }
     if (msg.type === "addToCart") {
-      addWithFallback(msg.items)
+      addViaNativeTools(msg.items)
+        .catch(() => addWithFallback(msg.items))
         .then(sendResponse)
         .catch((e) => sendResponse({ ok: false, error: String(e) }));
       return true;
     }
     return false;
   });
+
+  let bridgeSeq = 0;
+  function bridgeCall(kind, payload, timeoutMs) {
+    return new Promise((resolve, reject) => {
+      const id = `ens-${Date.now()}-${bridgeSeq++}`;
+      const timer = setTimeout(() => {
+        window.removeEventListener("message", onMessage);
+        reject(new Error(`bridge timeout: ${kind}`));
+      }, timeoutMs || 30000);
+      function onMessage(event) {
+        if (event.source !== window) return;
+        const res = event.data;
+        if (!res || res.ensembleBridge !== "response" || res.id !== id) return;
+        clearTimeout(timer);
+        window.removeEventListener("message", onMessage);
+        resolve(res);
+      }
+      window.addEventListener("message", onMessage);
+      window.postMessage({ ensembleBridge: "request", id, kind, ...payload }, location.origin);
+    });
+  }
+
+  function toVariantGid(id) {
+    const s = String(id);
+    return s.startsWith("gid://") ? s : `gid://shopify/ProductVariant/${s}`;
+  }
+
+  async function callStoreTool(name, args) {
+    const res = await bridgeCall("callTool", { name, args });
+    if (!res.ok) throw new Error(res.error);
+    const result = res.result || {};
+    const sc = result.structuredContent || {};
+    if (result.isError || sc.error) throw new Error(sc.error || "tool returned an error");
+    return sc;
+  }
+
+  async function addViaNativeTools(rawItems) {
+    const listed = await bridgeCall("listTools", {}, 3000);
+    if (!listed.ok || !listed.tools.includes("update_cart")) {
+      throw new Error("native store tools unavailable");
+    }
+    const byVariant = {
+      cart: {
+        line_items: rawItems.map((i) => ({
+          item: { id: toVariantGid(i.id) },
+          quantity: i.quantity || 1
+        }))
+      }
+    };
+    try {
+      const sc = await callStoreTool("update_cart", byVariant);
+      return { ok: true, status: 200, body: await nativeCartSummary(sc) };
+    } catch {
+      const byHandle = {
+        cart: {
+          line_items: rawItems
+            .filter((i) => i.handle)
+            .map((i) => ({ handle: i.handle, quantity: i.quantity || 1 }))
+        }
+      };
+      if (!byHandle.cart.line_items.length) throw new Error("no handles for native fallback");
+      const sc = await callStoreTool("update_cart", byHandle);
+      return { ok: true, status: 200, body: await nativeCartSummary(sc) };
+    }
+  }
+
+  async function nativeCartSummary(sc) {
+    let count = typeof sc.item_count === "number" ? sc.item_count : null;
+    if (count === null) {
+      try {
+        const cart = await callStoreTool("get_cart", {});
+        if (typeof cart.item_count === "number") count = cart.item_count;
+      } catch {}
+    }
+    const suffix = sc.deduped ? ", nothing new to add" : "";
+    return count === null ? `native: added${suffix}` : `native: cart has ${count} item(s)${suffix}`;
+  }
 
   async function postItems(items) {
     const res = await fetch("/cart/add.js", {
