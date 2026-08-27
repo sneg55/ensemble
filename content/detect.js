@@ -19,6 +19,10 @@
   chrome.runtime.sendMessage({ type: "shopifyDetected", origin: location.origin });
 
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+    if (msg.type === "ping") {
+      sendResponse({ ok: true });
+      return false;
+    }
     if (msg.type === "fetchCatalog") {
       fetchAllProducts(msg.pages || 2)
         .then((products) => sendResponse({ ok: true, products }))

@@ -1,73 +1,73 @@
-import { recordKnownStore } from "./lib/config.js";
+import { getKnownStores, recordKnownStore } from "./lib/config.js";
 
-const shopifyTabs = new Map();
-
-chrome.runtime.onMessage.addListener((msg, sender) => {
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === "shopifyDetected" && sender.tab) {
-    shopifyTabs.set(sender.tab.id, msg.origin);
-    chrome.storage.local.get("knownStores").then(({ knownStores }) => {
-      chrome.storage.local.set({
-        knownStores: { ...(knownStores || {}), [msg.origin]: Date.now() }
-      });
-    });
+    recordKnownStore(msg.origin);
     chrome.action.setBadgeText({ tabId: sender.tab.id, text: "ON" });
     chrome.action.setBadgeBackgroundColor({ tabId: sender.tab.id, color: "#7A1F2B" });
+    return false;
   }
-});
-
-chrome.tabs.onRemoved.addListener((tabId) => shopifyTabs.delete(tabId));
-
-chrome.action.onClicked.addListener(async (tab) => {
-  await chrome.sidePanel.open({ tabId: tab.id });
-});
-
-async function tabForOrigin(origin) {
-  for (const [tabId, tabOrigin] of shopifyTabs) {
-    if (tabOrigin === origin) {
-      try {
-        await chrome.tabs.get(tabId);
-        return tabId;
-      } catch {
-        shopifyTabs.delete(tabId);
-      }
-    }
-  }
-  const tab = await chrome.tabs.create({ url: `${origin}/cart`, active: false });
-  await new Promise((resolve) => {
-    const listener = (tabId, info) => {
-      if (tabId === tab.id && info.status === "complete") {
-        chrome.tabs.onUpdated.removeListener(listener);
-        resolve();
-      }
-    };
-    chrome.tabs.onUpdated.addListener(listener);
-  });
-  await new Promise((r) => setTimeout(r, 800));
-  return tab.id;
-}
-
-chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.type === "panelFetchCatalog") {
-    tabForOrigin(msg.origin)
-      .then((tabId) => chrome.tabs.sendMessage(tabId, { type: "fetchCatalog", pages: msg.pages }))
+    relayToStore(msg.origin, { type: "fetchCatalog", pages: msg.pages })
       .then(sendResponse)
       .catch((e) => sendResponse({ ok: false, error: String(e) }));
     return true;
   }
   if (msg.type === "panelAddToCart") {
-    tabForOrigin(msg.origin)
-      .then((tabId) => chrome.tabs.sendMessage(tabId, { type: "addToCart", items: msg.items }))
+    relayToStore(msg.origin, { type: "addToCart", items: msg.items })
       .then(sendResponse)
       .catch((e) => sendResponse({ ok: false, error: String(e) }));
     return true;
   }
   if (msg.type === "activeShopifyOrigin") {
-    chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
-      const active = tab ? shopifyTabs.get(tab.id) : null;
-      const fallback = [...shopifyTabs.values()].pop() || null;
-      sendResponse({ origin: active || fallback });
-    });
+    resolveActiveOrigin().then((origin) => sendResponse({ origin }));
     return true;
   }
   return false;
 });
+
+chrome.action.onClicked.addListener(async (tab) => {
+  await chrome.sidePanel.open({ tabId: tab.id });
+});
+
+async function resolveActiveOrigin() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const known = await getKnownStores();
+  if (tab && tab.url) {
+    try {
+      const origin = new URL(tab.url).origin;
+      if (known[origin]) return origin;
+    } catch {
+      return null;
+    }
+  }
+  const byRecency = Object.entries(known).sort((a, b) => b[1] - a[1]);
+  return byRecency.length ? byRecency[0][0] : null;
+}
+
+async function ping(tabId) {
+  try {
+    const res = await chrome.tabs.sendMessage(tabId, { type: "ping" });
+    return Boolean(res && res.ok);
+  } catch {
+    return false;
+  }
+}
+
+async function relayToStore(origin, message) {
+  const tabId = await storeTab(origin);
+  return chrome.tabs.sendMessage(tabId, message);
+}
+
+async function storeTab(origin) {
+  const tabs = await chrome.tabs.query({ url: `${origin}/*` });
+  for (const tab of tabs) {
+    if (await ping(tab.id)) return tab.id;
+  }
+  const created = await chrome.tabs.create({ url: `${origin}/cart`, active: false });
+  for (let attempt = 0; attempt < 40; attempt++) {
+    await new Promise((r) => setTimeout(r, 500));
+    if (await ping(created.id)) return created.id;
+  }
+  throw new Error(`no responding tab for ${origin}`);
+}
