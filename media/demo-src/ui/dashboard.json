@@ -1,0 +1,31 @@
+{
+  "$schema": "../node_modules/testreel/recording-definition.schema.json",
+  "url": "http://localhost:3000/dashboard",
+  "viewport": { "width": 1920, "height": 1080 },
+  "outputFormat": "mp4",
+  "cursor": {
+    "enabled": true,
+    "size": 30,
+    "color": "#4f46e5",
+    "rippleColor": "#a855f7",
+    "rippleSize": 46,
+    "idleHide": false,
+    "transitionMs": 650
+  },
+  "setup": {
+    "url": "http://localhost:3000/login",
+    "steps": [
+      { "action": "fill", "selector": "input[name=\"username\"]", "text": "admin" },
+      { "action": "fill", "selector": "input[name=\"password\"]", "text": "admin" },
+      { "action": "click", "selector": "button[type=\"submit\"]" },
+      { "action": "wait", "ms": 3000 }
+    ]
+  },
+  "steps": [
+    { "action": "wait", "ms": 4500 },
+    { "action": "hover", "selector": "[data-testid=\"row-1\"]" },
+    { "action": "wait", "ms": 1600 },
+    { "action": "click", "selector": "[data-testid=\"row-1\"]" },
+    { "action": "wait", "ms": 2200 }
+  ]
+}

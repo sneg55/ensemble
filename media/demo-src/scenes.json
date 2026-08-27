@@ -1,0 +1,125 @@
+[
+  {
+    "id": "intro",
+    "sec": 13,
+    "kind": "card",
+    "caption": "Ensemble: one look, many stores, every piece real",
+    "narrate": "Your look does not come from one store. This is Ensemble, a Chrome extension that composes a purchasable outfit across Shopify stores, through the Web M C P tools the stores themselves publish.",
+    "block": {
+      "type": "title",
+      "brand": "Ensemble",
+      "sub": "one look, many stores, every piece real",
+      "tag": "try it on  \u00b7  mix catalogs  \u00b7  fill every cart"
+    }
+  },
+  {
+    "id": "tools",
+    "sec": 16,
+    "kind": "term",
+    "caption": "Shopify storefronts register WebMCP tools on document.modelContext",
+    "narrate": "Shopify storefronts already register native Web M C P tools on document dot model context. Catalog search, product lookup, cart updates, published by the page itself, on by default. Ensemble captures those tools in the page and uses them as the store's own A P I.",
+    "block": {
+      "type": "term",
+      "prompt": "document.modelContext.getTools()",
+      "lines": [
+        {
+          "text": "[ search_catalog, browse_store, get_product, show_variant,",
+          "cls": "good"
+        },
+        {
+          "text": "  get_cart, update_cart, cancel_cart, proceed_to_checkout,",
+          "cls": "good"
+        },
+        {
+          "text": "  manage_orders, search_shop_policies_and_faqs ]",
+          "cls": "good"
+        },
+        {
+          "text": "",
+          "cls": "dim"
+        },
+        {
+          "text": "update_cart({ cart: { line_items: [{ item: {",
+          "cls": "plain"
+        },
+        {
+          "text": "  id: \"gid://shopify/ProductVariant/46979967123540\" },",
+          "cls": "plain"
+        },
+        {
+          "text": "  quantity: 1 }] } })",
+          "cls": "plain"
+        },
+        {
+          "text": "-> { updated: true, cart: { item_count: 1 } }",
+          "cls": "hi"
+        }
+      ]
+    }
+  },
+  {
+    "id": "panel",
+    "sec": 18,
+    "kind": "ui",
+    "capture": "panel",
+    "caption": "The catalog loads on its own; your photo stays in the browser",
+    "narrate": "Open the panel on any Shopify store and the catalog loads on its own, straight from the store. Set your photo once. It stays in your browser's local storage, and there is no Ensemble server behind any of this."
+  },
+  {
+    "id": "render",
+    "sec": 14,
+    "kind": "ui",
+    "capture": "render",
+    "caption": "Render on me: this exact product, on your photo",
+    "narrate": "Ensemble meets you on the store's own product page. Pick your size, then hit Render on me. Ensemble sends this exact product and your photo to Gemini, with your own key."
+  },
+  {
+    "id": "render2",
+    "sec": 12,
+    "kind": "ui",
+    "capture": "render2",
+    "caption": "Your photo, this store's jeans, no tab left behind",
+    "narrate": "A few seconds later you are looking at yourself in the jeans you were browsing, without leaving the store. Save it, or add the piece straight to your look."
+  },
+  {
+    "id": "suggest",
+    "sec": 24,
+    "kind": "ui",
+    "capture": "suggest",
+    "caption": "Suggest matches: real, in-stock pieces from the live catalog",
+    "narrate": "Then ask what goes with it. Suggestions come from the store's live inventory, each one a real product with a real price, one click from the look. And the size you picked is the size that travels: U S 2 on the page will be U S 2 in the cart."
+  },
+  {
+    "id": "secondstore",
+    "sec": 18,
+    "kind": "ui",
+    "capture": "secondstore",
+    "caption": "A second store joins the same look",
+    "narrate": "A look is not limited to one store. Visit another Shopify shop and it appears as a chip in the same panel. Add a pair of wool runners, and the look now spans two stores with one running total."
+  },
+  {
+    "id": "carts",
+    "sec": 20,
+    "kind": "ui",
+    "capture": "carts",
+    "caption": "Add all to carts: exact variants, every store, one click",
+    "narrate": "One click fills every store's cart with exactly those variants, through each store's own registered cart tool. Both carts, filled in one motion, down to the size you picked. Checkout stays native per store, so payment and trust stay where they already live. The storefront published the tools. Ensemble is the agent that uses them."
+  },
+  {
+    "id": "outro",
+    "sec": 12,
+    "kind": "card",
+    "caption": "ensemble-dhf.pages.dev \u00b7 github.com/sneg55/ensemble",
+    "narrate": "Ensemble. Open source, no account, no server. The site and the repository are linked in the description.",
+    "block": {
+      "type": "bullets",
+      "title": "Ensemble",
+      "rows": [
+        "ensemble-dhf.pages.dev",
+        "github.com/sneg55/ensemble",
+        "No server. Your photo and key stay local.",
+        "Built on WebMCP: the store's own tools"
+      ]
+    }
+  }
+]

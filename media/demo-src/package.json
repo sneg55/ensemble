@@ -1,0 +1,17 @@
+{
+  "name": "demo-src",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Source for the product demo video: testreel captures the web UI, OpenAI TTS narrates, ffmpeg assembles the mp4.",
+  "scripts": {
+    "capture:ui": "for f in ui/*.json; do npx testreel \"$f\" --format mp4 || exit 1; done",
+    "cards": "node render-cards.mjs",
+    "tts": "node tts.mjs",
+    "build": "node build-video.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.61.1",
+    "testreel": "0.2.0"
+  }
+}

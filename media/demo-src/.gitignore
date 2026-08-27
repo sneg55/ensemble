@@ -1,0 +1,6 @@
+node_modules/
+out/
+testreel-output/
+profile/
+.env
+rawvideo/
