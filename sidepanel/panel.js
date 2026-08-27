@@ -195,9 +195,22 @@ els["render"].addEventListener("click", async () => {
       state.look.items.map((i) => i.title),
       state.apiKey
     );
+    const wrap = document.createElement("div");
+    wrap.className = "render-card";
     const img = document.createElement("img");
     img.src = rendered;
-    els["renders"].prepend(img);
+    const close = document.createElement("button");
+    close.textContent = "x";
+    close.className = "render-close";
+    close.addEventListener("click", () => wrap.remove());
+    const save = document.createElement("a");
+    save.textContent = "Save";
+    save.className = "render-save";
+    save.href = rendered;
+    save.download = `ensemble-look-${Date.now()}.png`;
+    wrap.append(img, close, save);
+    els["renders"].prepend(wrap);
+    wrap.scrollIntoView({ behavior: "smooth", block: "nearest" });
     setStatus("Rendered");
   } catch (e) {
     setStatus(String(e));
