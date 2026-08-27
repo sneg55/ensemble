@@ -7,7 +7,8 @@ import {
   extractProducts,
   firstAvailableVariant,
   groupItemsByStore,
-  lookTotalByStore
+  lookTotalByStore,
+  productFromNative
 } from "../lib/shopify.js";
 
 const fixture = JSON.parse(
@@ -67,4 +68,35 @@ test("catalog summary is one line per product", () => {
   const summary = catalogSummaryForPrompt(products, 10);
   assert.equal(summary.split("\n").length, Math.min(10, products.length));
   assert.ok(summary.includes("|"));
+});
+
+test("productFromNative maps GID variants, cent prices and availability", () => {
+  const sc = {
+    product: {
+      handle: "midi-dress",
+      title: "Midi Dress",
+      variants: [
+        {
+          id: "gid://shopify/ProductVariant/41722120175700",
+          title: "US 0",
+          price: { amount: 7900, currency: "USD" },
+          availability: { available: false },
+          options: [{ name: "Size", value: "US 0" }]
+        },
+        {
+          id: "gid://shopify/ProductVariant/41722120175701",
+          title: "US 2",
+          price: { amount: 7900, currency: "USD" },
+          availability: { available: true },
+          options: [{ name: "Size", value: "US 2" }]
+        }
+      ]
+    }
+  };
+  const p = productFromNative(sc, "https://x.example", "https://img.example/a.jpg");
+  assert.equal(p.image, "https://img.example/a.jpg");
+  assert.equal(p.variants[0].price, "79.00");
+  assert.equal(p.variants[0].available, false);
+  assert.equal(p.variants[1].available, true);
+  assert.equal(firstAvailableVariant(p).title, "US 2");
 });

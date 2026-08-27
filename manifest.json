@@ -29,7 +29,7 @@
     },
     {
       "matches": ["https://*/*"],
-      "js": ["content/detect.js"],
+      "js": ["content/detect.js", "content/overlay.js"],
       "run_at": "document_idle"
     }
   ],

@@ -1,4 +1,19 @@
-import { getKnownStores, recordKnownStore } from "./lib/config.js";
+import {
+  getApiKey,
+  getKnownStores,
+  getLook,
+  getPhoto,
+  recordKnownStore,
+  setLook
+} from "./lib/config.js";
+import { renderLook, suggestMatches } from "./lib/gemini.js";
+import { addItem, newLook } from "./lib/looks.js";
+import {
+  catalogSummaryForPrompt,
+  extractProducts,
+  firstAvailableVariant,
+  productFromNative
+} from "./lib/shopify.js";
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === "shopifyDetected" && sender.tab) {
@@ -15,6 +30,24 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
   if (msg.type === "panelAddToCart") {
     relayToStore(msg.origin, { type: "addToCart", items: msg.items })
+      .then(sendResponse)
+      .catch((e) => sendResponse({ ok: false, error: String(e) }));
+    return true;
+  }
+  if (msg.type === "overlayRender") {
+    overlayRender(msg)
+      .then(sendResponse)
+      .catch((e) => sendResponse({ ok: false, error: String(e) }));
+    return true;
+  }
+  if (msg.type === "overlaySuggest") {
+    overlaySuggest(msg)
+      .then(sendResponse)
+      .catch((e) => sendResponse({ ok: false, error: String(e) }));
+    return true;
+  }
+  if (msg.type === "overlayAddToLook") {
+    overlayAddToLook(msg)
       .then(sendResponse)
       .catch((e) => sendResponse({ ok: false, error: String(e) }));
     return true;
@@ -70,4 +103,70 @@ async function storeTab(origin) {
     if (await ping(created.id)) return created.id;
   }
   throw new Error(`no responding tab for ${origin}`);
+}
+
+async function fetchAsDataUrl(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`image fetch ${res.status}`);
+  const blob = await res.blob();
+  const buf = new Uint8Array(await blob.arrayBuffer());
+  let binary = "";
+  for (let i = 0; i < buf.length; i += 0x8000) {
+    binary += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+  }
+  return `data:${blob.type || "image/jpeg"};base64,${btoa(binary)}`;
+}
+
+async function overlayRender(msg) {
+  const apiKey = await getApiKey();
+  if (!apiKey) return { ok: false, error: "no-key" };
+  const photo = await getPhoto();
+  if (!photo) return { ok: false, error: "no-photo" };
+  const itemImage = await fetchAsDataUrl(msg.imageUrl);
+  const image = await renderLook(photo, [itemImage], [msg.title], apiKey);
+  return { ok: true, image };
+}
+
+async function overlaySuggest(msg) {
+  const apiKey = await getApiKey();
+  if (!apiKey) return { ok: false, error: "no-key" };
+  const res = await relayToStore(msg.origin, { type: "fetchCatalog", pages: 2 });
+  if (!res || !res.ok) return { ok: false, error: "could not load the store catalog" };
+  const products = extractProducts(res.products, msg.origin);
+  const handles = await suggestMatches([msg.seedTitle], catalogSummaryForPrompt(products), apiKey);
+  const byHandle = new Map(products.map((p) => [p.handle, p]));
+  const suggestions = handles
+    .map((h) => byHandle.get(h))
+    .filter(Boolean)
+    .filter((p) => p.title !== msg.seedTitle)
+    .map((p) => {
+      const v = firstAvailableVariant(p);
+      return { handle: p.handle, title: p.title, image: p.image, price: v ? v.price : "" };
+    });
+  return { ok: true, suggestions };
+}
+
+async function overlayAddToLook(msg) {
+  const res = await relayToStore(msg.origin, {
+    type: "storeTool",
+    name: "get_product",
+    args: { catalog: { id: msg.handle } }
+  });
+  let product = null;
+  if (res && res.ok && res.sc) {
+    product = productFromNative(res.sc, msg.origin, msg.fallbackImage);
+  } else {
+    const cat = await relayToStore(msg.origin, { type: "fetchCatalog", pages: 2 });
+    if (cat && cat.ok) {
+      product = extractProducts(cat.products, msg.origin).find((p) => p.handle === msg.handle);
+    }
+  }
+  if (!product || !product.variants.length) {
+    return { ok: false, error: "could not resolve the product" };
+  }
+  const variant = firstAvailableVariant(product);
+  const look = (await getLook()) || newLook("My look");
+  const updated = addItem(look, product, variant);
+  await setLook(updated);
+  return { ok: true, count: updated.items.length };
 }

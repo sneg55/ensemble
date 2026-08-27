@@ -17,6 +17,8 @@
   }
   if (!confirmed) return;
   chrome.runtime.sendMessage({ type: "shopifyDetected", origin: location.origin });
+  globalThis.ensembleShopConfirmed = true;
+  window.dispatchEvent(new CustomEvent("ensemble:shopify"));
 
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     if (msg.type === "ping") {
@@ -26,6 +28,12 @@
     if (msg.type === "fetchCatalog") {
       fetchAllProducts(msg.pages || 2)
         .then((products) => sendResponse({ ok: true, products }))
+        .catch((e) => sendResponse({ ok: false, error: String(e) }));
+      return true;
+    }
+    if (msg.type === "storeTool") {
+      callStoreTool(msg.name, msg.args)
+        .then((sc) => sendResponse({ ok: true, sc }))
         .catch((e) => sendResponse({ ok: false, error: String(e) }));
       return true;
     }

@@ -219,6 +219,13 @@ els["new-look"].addEventListener("click", async () => {
   setStatus("Started a new look");
 });
 
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== "local" || !changes.look || !changes.look.newValue) return;
+  state.look = changes.look.newValue;
+  renderLookSection();
+  renderCatalog(visibleCatalog());
+});
+
 async function persistLook() {
   await setLook(state.look);
 }
