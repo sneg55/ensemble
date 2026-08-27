@@ -1,4 +1,4 @@
-import { getConfig, setLook, setPhoto } from "../lib/config.js";
+import { getConfig, getKnownStores, setLook, setPhoto } from "../lib/config.js";
 import { renderLook, suggestMatches } from "../lib/gemini.js";
 import { addItem, newLook, removeItem } from "../lib/looks.js";
 import {

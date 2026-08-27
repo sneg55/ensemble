@@ -3,15 +3,8 @@
   "name": "Ensemble",
   "version": "0.1.0",
   "description": "Compose a purchasable look across Shopify stores: try it on, mix and match, add every piece to its cart.",
-  "permissions": [
-    "storage",
-    "sidePanel",
-    "tabs",
-    "scripting"
-  ],
-  "host_permissions": [
-    "https://*/*"
-  ],
+  "permissions": ["storage", "sidePanel", "tabs", "scripting"],
+  "host_permissions": ["https://*/*"],
   "background": {
     "service_worker": "background.js",
     "type": "module"
@@ -29,12 +22,8 @@
   "options_page": "options/options.html",
   "content_scripts": [
     {
-      "matches": [
-        "https://*/*"
-      ],
-      "js": [
-        "content/detect.js"
-      ],
+      "matches": ["https://*/*"],
+      "js": ["content/detect.js"],
       "run_at": "document_idle"
     }
   ],
