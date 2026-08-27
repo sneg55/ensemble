@@ -10,8 +10,10 @@
   <h1>Ensemble</h1>
   <span id="store-state">No Shopify store detected on this tab</span>
 </header>
+<div id="hints" hidden></div>
 <section id="photo-section">
   <img id="photo-preview" hidden alt="Your photo">
+  <button id="photo-remove" hidden aria-label="Remove your photo">x</button>
   <label class="button">Set your photo<input id="photo-input" type="file" accept="image/*" hidden></label>
 </section>
 <section id="catalog-section" hidden>
@@ -24,6 +26,7 @@
 <section id="look-section">
   <div class="row">
     <h2>Current look</h2>
+    <button id="new-look" hidden>New look</button>
     <span id="look-total"></span>
   </div>
   <div id="look-items" class="grid"></div>

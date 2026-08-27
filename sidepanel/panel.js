@@ -9,25 +9,27 @@ import {
   lookTotalByStore
 } from "../lib/shopify.js";
 
-const els = Object.fromEntries(
-  [
-    "store-state",
-    "photo-preview",
-    "photo-input",
-    "catalog-section",
-    "catalog-search",
-    "load-catalog",
-    "catalog-grid",
-    "look-items",
-    "look-total",
-    "suggest",
-    "render",
-    "add-to-carts",
-    "suggestions",
-    "renders",
-    "status"
-  ].map((id) => [id, document.getElementById(id)])
-);
+const ids = [
+  "store-state",
+  "hints",
+  "photo-preview",
+  "photo-remove",
+  "photo-input",
+  "catalog-section",
+  "catalog-search",
+  "load-catalog",
+  "catalog-grid",
+  "look-items",
+  "look-total",
+  "new-look",
+  "suggest",
+  "render",
+  "add-to-carts",
+  "suggestions",
+  "renders",
+  "status"
+];
+const els = Object.fromEntries(ids.map((id) => [id, document.getElementById(id)]));
 
 const state = {
   origin: null,
@@ -57,21 +59,36 @@ async function init() {
         btn.addEventListener("click", () => {
           state.origin = o;
           state.catalog = state.catalogsByStore[o] || [];
-          renderCatalog(state.catalog.slice(0, 60));
-          for (const b of els["store-state"].children)
+          renderCatalog(visibleCatalog());
+          for (const b of els["store-state"].children) {
             b.className = b === btn ? "store active" : "store";
+          }
         });
         return btn;
       })
     );
     els["catalog-section"].hidden = false;
+  } else {
+    els["store-state"].textContent = "No Shopify store detected on this tab";
   }
   renderLookSection();
+  renderHints();
+}
+
+function renderHints() {
+  const next = [];
+  if (!state.photo) next.push("set your photo");
+  if (!state.origin) next.push("open any Shopify store in a tab");
+  else if (!state.catalog.length) next.push("load this store's catalog");
+  if (!state.apiKey) next.push("add a Gemini key in Options to unlock suggestions and try-on");
+  els.hints.textContent = next.length ? `Next: ${next.join(" · ")}` : "";
+  els.hints.hidden = !next.length;
 }
 
 function showPhoto() {
   els["photo-preview"].src = state.photo;
   els["photo-preview"].hidden = false;
+  els["photo-remove"].hidden = false;
 }
 
 els["photo-input"].addEventListener("change", () => {
@@ -82,51 +99,88 @@ els["photo-input"].addEventListener("change", () => {
     state.photo = reader.result;
     await setPhoto(state.photo);
     showPhoto();
+    renderHints();
   };
   reader.readAsDataURL(file);
 });
 
-els["load-catalog"].addEventListener("click", async () => {
-  setStatus("Loading catalog...");
-  const res = await chrome.runtime.sendMessage({
-    type: "panelFetchCatalog",
-    origin: state.origin,
-    pages: 2
-  });
-  if (!res || !res.ok) return setStatus(`Catalog failed: ${(res && res.error) || "no response"}`);
-  state.catalog = extractProducts(res.products, state.origin);
-  state.catalogsByStore[state.origin] = state.catalog;
-  setStatus(`${state.catalog.length} products loaded`);
-  renderCatalog(state.catalog.slice(0, 60));
+els["photo-remove"].addEventListener("click", async () => {
+  state.photo = null;
+  await setPhoto(null);
+  els["photo-preview"].hidden = true;
+  els["photo-remove"].hidden = true;
+  renderHints();
 });
 
-els["catalog-search"].addEventListener("input", () => {
+function visibleCatalog() {
   const q = els["catalog-search"].value.toLowerCase();
-  renderCatalog(state.catalog.filter((p) => p.title.toLowerCase().includes(q)).slice(0, 60));
+  return state.catalog.filter((p) => p.title.toLowerCase().includes(q)).slice(0, 60);
+}
+
+els["load-catalog"].addEventListener("click", async () => {
+  await busy(els["load-catalog"], "Loading...", async () => {
+    setStatus("Loading catalog...");
+    const res = await chrome.runtime.sendMessage({
+      type: "panelFetchCatalog",
+      origin: state.origin,
+      pages: 2
+    });
+    if (!res || !res.ok) return setStatus(`Catalog failed: ${(res && res.error) || "no response"}`);
+    state.catalog = extractProducts(res.products, state.origin);
+    state.catalogsByStore[state.origin] = state.catalog;
+    setStatus(`${state.catalog.length} products loaded`);
+    renderCatalog(visibleCatalog());
+    renderHints();
+  });
 });
 
-function productCard(product, actionLabel, onAction) {
+els["catalog-search"].addEventListener("input", () => renderCatalog(visibleCatalog()));
+
+function inLook(variantId) {
+  return state.look.items.some((i) => i.variantId === variantId);
+}
+
+function productCard(product, onAction) {
   const variant = firstAvailableVariant(product);
   const card = document.createElement("div");
   card.className = "card";
-  card.innerHTML = `<img src="${product.image}" alt=""><div class="meta">${product.title}<div class="price">$${variant ? variant.price : "?"}</div></div>`;
+  card.innerHTML = `<img src="${product.image}" alt=""><div class="meta">${product.title}<div class="price">${variant ? variant.price : "?"}</div></div>`;
   const btn = document.createElement("button");
-  btn.textContent = actionLabel;
-  btn.addEventListener("click", () => onAction(product, variant));
+  const already = variant && inLook(variant.id);
+  btn.textContent = already ? "✓" : "+";
+  btn.disabled = already;
+  btn.setAttribute("aria-label", `Add ${product.title} to look`);
+  btn.addEventListener("click", async () => {
+    await onAction(product, variant);
+    btn.textContent = "✓";
+    btn.disabled = true;
+  });
   card.appendChild(btn);
   return card;
 }
 
+function emptyGridNotice(text) {
+  const div = document.createElement("div");
+  div.className = "grid-empty";
+  div.textContent = text;
+  return div;
+}
+
 function renderCatalog(products) {
-  els["catalog-grid"].replaceChildren(
-    ...products.map((p) =>
-      productCard(p, "+", async (product, variant) => {
-        state.look = addItem(state.look, product, variant);
-        await persistLook();
-        renderLookSection();
-      })
-    )
-  );
+  if (!products.length) {
+    const notice = state.catalog.length
+      ? "No matches in this catalog"
+      : "Load the catalog to browse";
+    els["catalog-grid"].replaceChildren(emptyGridNotice(notice));
+    return;
+  }
+  els["catalog-grid"].replaceChildren(...products.map((p) => productCard(p, addToLook)));
+}
+
+async function addToLook(product, variant) {
+  state.look = addItem(state.look, product, variant);
+  await persistLook();
+  renderLookSection();
 }
 
 function renderLookSection() {
@@ -134,121 +188,157 @@ function renderLookSection() {
     ...state.look.items.map((item) => {
       const card = document.createElement("div");
       card.className = "card";
-      card.innerHTML = `<img src="${item.image}" alt=""><div class="meta">${item.title}<div class="price">$${item.price} · ${new URL(item.storeOrigin).host}</div></div>`;
+      card.innerHTML = `<img src="${item.image}" alt=""><div class="meta">${item.title}<div class="price">${item.price} · ${new URL(item.storeOrigin).host}</div></div>`;
       const btn = document.createElement("button");
       btn.textContent = "x";
+      btn.setAttribute("aria-label", `Remove ${item.title} from look`);
       btn.addEventListener("click", async () => {
         state.look = removeItem(state.look, item.variantId);
         await persistLook();
         renderLookSection();
+        renderCatalog(visibleCatalog());
       });
       card.appendChild(btn);
       return card;
     })
   );
   const totals = lookTotalByStore(state.look.items);
-  const grand = Object.values(totals).reduce((a, b) => a + b, 0);
+  const parts = Object.entries(totals).map(([o, t]) => `${t.toFixed(2)} (${new URL(o).host})`);
   els["look-total"].textContent = state.look.items.length
-    ? `$${grand.toFixed(2)} across ${Object.keys(totals).length} store(s)`
+    ? `${state.look.items.length} item(s): ${parts.join(" + ")}`
     : "";
+  els["new-look"].hidden = !state.look.items.length;
 }
+
+els["new-look"].addEventListener("click", async () => {
+  state.look = newLook("My look");
+  await persistLook();
+  renderLookSection();
+  renderCatalog(visibleCatalog());
+  els["suggestions"].replaceChildren();
+  setStatus("Started a new look");
+});
 
 async function persistLook() {
   await setLook(state.look);
 }
 
-els["suggest"].addEventListener("click", async () => {
-  if (!requireKey() || !state.catalog.length) return setStatus("Load a catalog first");
-  setStatus("Styling...");
+async function busy(button, busyLabel, fn) {
+  const original = button.textContent;
+  button.disabled = true;
+  button.textContent = busyLabel;
   try {
-    const handles = await suggestMatches(
-      state.look.items.map((i) => i.title),
-      catalogSummaryForPrompt(state.catalog),
-      state.apiKey
-    );
-    const picks = state.catalog.filter((p) => handles.includes(p.handle));
-    els["suggestions"].replaceChildren(
-      ...picks.map((p) =>
-        productCard(p, "+", async (product, variant) => {
-          state.look = addItem(state.look, product, variant);
-          await persistLook();
-          renderLookSection();
-        })
-      )
-    );
-    setStatus(picks.length ? `${picks.length} suggestion(s)` : "No matches suggested");
-  } catch (e) {
-    setStatus(String(e));
+    await fn();
+  } finally {
+    button.disabled = false;
+    button.textContent = original;
   }
+}
+
+els["suggest"].addEventListener("click", async () => {
+  if (!state.apiKey)
+    return setStatus("Suggestions need a Gemini API key: set one in the extension Options");
+  const pool = Object.values(state.catalogsByStore).flat();
+  if (!pool.length) return setStatus("Load a store catalog first, then ask for suggestions");
+  await busy(els["suggest"], "Styling...", async () => {
+    setStatus("Styling...");
+    try {
+      const handles = await suggestMatches(
+        state.look.items.map((i) => i.title),
+        catalogSummaryForPrompt(pool),
+        state.apiKey
+      );
+      const picks = pool.filter((p) => handles.includes(p.handle));
+      els["suggestions"].replaceChildren(
+        ...(picks.length
+          ? picks.map((p) => productCard(p, addToLook))
+          : [emptyGridNotice("No matches suggested")])
+      );
+      setStatus(picks.length ? `${picks.length} suggestion(s)` : "No matches suggested");
+    } catch (e) {
+      setStatus(String(e));
+    }
+  });
 });
 
 els["render"].addEventListener("click", async () => {
-  if (!requireKey()) return;
+  if (!state.apiKey)
+    return setStatus("Try-on renders need a Gemini API key: set one in the extension Options");
   if (!state.photo) return setStatus("Set your photo first");
   if (!state.look.items.length) return setStatus("Add items to the look first");
-  setStatus("Rendering look on you...");
-  try {
-    const itemImages = await Promise.all(state.look.items.map((i) => toDataUrl(i.image)));
-    const rendered = await renderLook(
-      state.photo,
-      itemImages,
-      state.look.items.map((i) => i.title),
-      state.apiKey
-    );
-    const wrap = document.createElement("div");
-    wrap.className = "render-card";
-    const img = document.createElement("img");
-    img.src = rendered;
-    const close = document.createElement("button");
-    close.textContent = "x";
-    close.className = "render-close";
-    close.addEventListener("click", () => wrap.remove());
-    const save = document.createElement("a");
-    save.textContent = "Save";
-    save.className = "render-save";
-    save.href = rendered;
-    save.download = `ensemble-look-${Date.now()}.png`;
-    wrap.append(img, close, save);
-    els["renders"].prepend(wrap);
-    wrap.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    setStatus("Rendered");
-  } catch (e) {
-    setStatus(String(e));
-  }
+  await busy(els["render"], "Rendering...", async () => {
+    setStatus("Rendering look on you...");
+    try {
+      const itemImages = await Promise.all(state.look.items.map((i) => toDataUrl(i.image)));
+      const rendered = await renderLook(
+        state.photo,
+        itemImages,
+        state.look.items.map((i) => i.title),
+        state.apiKey
+      );
+      const wrap = document.createElement("div");
+      wrap.className = "render-card";
+      const img = document.createElement("img");
+      img.src = rendered;
+      const close = document.createElement("button");
+      close.textContent = "x";
+      close.className = "render-close";
+      close.setAttribute("aria-label", "Dismiss this render");
+      close.addEventListener("click", () => wrap.remove());
+      const save = document.createElement("a");
+      save.textContent = "Save";
+      save.className = "render-save";
+      save.href = rendered;
+      save.download = `ensemble-look-${Date.now()}.png`;
+      wrap.append(img, close, save);
+      els["renders"].prepend(wrap);
+      wrap.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      setStatus("Rendered");
+    } catch (e) {
+      setStatus(String(e));
+    }
+  });
 });
 
 els["add-to-carts"].addEventListener("click", async () => {
   const groups = groupItemsByStore(state.look.items);
   if (!Object.keys(groups).length) return setStatus("Look is empty");
-  const lines = [];
-  setStatus("Adding to carts...");
-  for (const [origin, items] of Object.entries(groups)) {
-    let line;
-    try {
-      const res = await chrome.runtime.sendMessage({
-        type: "panelAddToCart",
-        origin,
-        items: items.map((i) => ({
-          id: i.variantId,
-          quantity: 1,
-          handle: i.handle,
-          altIds: i.variantIds || []
-        }))
-      });
-      if (res && res.ok) {
-        line = `${new URL(origin).host}: ${items.length} item(s) in cart`;
-      } else {
-        const detail = res
-          ? res.error || `${res.status} ${String(res.body || "").slice(0, 120)}`
-          : "no response";
-        line = `${new URL(origin).host}: failed (${detail})`;
+  await busy(els["add-to-carts"], "Adding...", async () => {
+    els.status.replaceChildren();
+    for (const [origin, items] of Object.entries(groups)) {
+      const line = document.createElement("div");
+      line.textContent = `${new URL(origin).host}: adding...`;
+      els.status.appendChild(line);
+      try {
+        const res = await chrome.runtime.sendMessage({
+          type: "panelAddToCart",
+          origin,
+          items: items.map((i) => ({
+            id: i.variantId,
+            quantity: 1,
+            handle: i.handle,
+            altIds: i.variantIds || []
+          }))
+        });
+        if (res && res.ok) {
+          line.textContent = `${new URL(origin).host}: ${items.length} item(s) in cart `;
+          const open = document.createElement("a");
+          open.textContent = "Open cart";
+          open.href = `${origin}/cart`;
+          open.target = "_blank";
+          open.className = "open-cart";
+          line.appendChild(open);
+        } else {
+          const detail = res
+            ? res.error || `${res.status} ${String(res.body || "").slice(0, 120)}`
+            : "no response";
+          line.textContent = `${new URL(origin).host}: failed (${detail})`;
+        }
+      } catch (e) {
+        line.textContent = `${new URL(origin).host}: failed (${e.message})`;
       }
-    } catch (e) {
-      line = `${new URL(origin).host}: failed (${e.message})`;
     }
-    lines.push(line);
-    setStatus(lines.join("\n"));
-  }
+  });
 });
 
 async function toDataUrl(url) {
@@ -261,16 +351,8 @@ async function toDataUrl(url) {
   });
 }
 
-function requireKey() {
-  if (!state.apiKey) {
-    setStatus("Set your Gemini API key in the extension options first");
-    return false;
-  }
-  return true;
-}
-
 function setStatus(text) {
-  els["status"].textContent = text;
+  els.status.textContent = text;
 }
 
 init();
