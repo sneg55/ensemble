@@ -52,6 +52,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       .catch((e) => sendResponse({ ok: false, error: String(e) }));
     return true;
   }
+  if (msg.type === "openSidePanel" && sender.tab) {
+    chrome.sidePanel
+      .open({ tabId: sender.tab.id })
+      .then(() => sendResponse({ ok: true }))
+      .catch((e) => sendResponse({ ok: false, error: String(e) }));
+    return true;
+  }
   if (msg.type === "activeShopifyOrigin") {
     resolveActiveOrigin().then((origin) => sendResponse({ origin }));
     return true;
@@ -146,25 +153,52 @@ async function overlaySuggest(msg) {
   return { ok: true, suggestions };
 }
 
+function variantMatches(variantId, requestedId) {
+  const v = String(variantId);
+  const r = String(requestedId);
+  return v === r || v.endsWith(`/${r}`) || r.endsWith(`/${v}`);
+}
+
 async function overlayAddToLook(msg) {
-  const res = await relayToStore(msg.origin, {
-    type: "storeTool",
-    name: "get_product",
-    args: { catalog: { id: msg.handle } }
-  });
   let product = null;
-  if (res && res.ok && res.sc) {
-    product = productFromNative(res.sc, msg.origin, msg.fallbackImage);
-  } else {
-    const cat = await relayToStore(msg.origin, { type: "fetchCatalog", pages: 2 });
+  if (msg.variantId) {
+    const cat = await relayToStore(msg.origin, { type: "fetchCatalog", pages: 2 }).catch(
+      () => null
+    );
     if (cat && cat.ok) {
-      product = extractProducts(cat.products, msg.origin).find((p) => p.handle === msg.handle);
+      const candidate = extractProducts(cat.products, msg.origin).find(
+        (p) => p.handle === msg.handle
+      );
+      if (candidate && candidate.variants.some((v) => variantMatches(v.id, msg.variantId))) {
+        product = candidate;
+      }
+    }
+  }
+  if (!product) {
+    const res = await relayToStore(msg.origin, {
+      type: "storeTool",
+      name: "get_product",
+      args: { catalog: { id: msg.handle } }
+    }).catch(() => null);
+    if (res && res.ok && res.sc) {
+      product = productFromNative(res.sc, msg.origin, msg.fallbackImage);
+    } else {
+      const cat = await relayToStore(msg.origin, { type: "fetchCatalog", pages: 2 }).catch(
+        () => null
+      );
+      if (cat && cat.ok) {
+        product = extractProducts(cat.products, msg.origin).find((p) => p.handle === msg.handle);
+      }
     }
   }
   if (!product || !product.variants.length) {
     return { ok: false, error: "could not resolve the product" };
   }
-  const variant = firstAvailableVariant(product);
+  const requested = msg.variantId
+    ? product.variants.find((v) => variantMatches(v.id, msg.variantId))
+    : null;
+  const variant =
+    requested && requested.available !== false ? requested : firstAvailableVariant(product);
   const look = (await getLook()) || newLook("My look");
   const updated = addItem(look, product, variant);
   await setLook(updated);

@@ -118,7 +118,7 @@ els["photo-remove"].addEventListener("click", async () => {
 
 function visibleCatalog() {
   const q = els["catalog-search"].value.toLowerCase();
-  return state.catalog.filter((p) => p.title.toLowerCase().includes(q)).slice(0, 60);
+  return state.catalog.filter((p) => p.title.toLowerCase().includes(q));
 }
 
 async function loadCatalog(origin) {
@@ -185,7 +185,16 @@ function renderCatalog(products) {
     els["catalog-grid"].replaceChildren(emptyGridNotice(notice));
     return;
   }
-  els["catalog-grid"].replaceChildren(...products.map((p) => productCard(p, addToLook)));
+  const shown = products.slice(0, 60);
+  const nodes = shown.map((p) => productCard(p, addToLook));
+  if (products.length > shown.length) {
+    nodes.push(
+      emptyGridNotice(
+        `Showing first ${shown.length} of ${products.length} matches, refine your search`
+      )
+    );
+  }
+  els["catalog-grid"].replaceChildren(...nodes);
 }
 
 async function addToLook(product, variant) {
@@ -236,6 +245,13 @@ chrome.storage.onChanged.addListener((changes, area) => {
   renderLookSection();
   renderCatalog(visibleCatalog());
 });
+
+function extForDataUrl(dataUrl) {
+  const mime = dataUrl.slice(5, dataUrl.indexOf(";"));
+  if (mime === "image/jpeg") return "jpg";
+  if (mime === "image/webp") return "webp";
+  return "png";
+}
 
 async function persistLook() {
   await setLook(state.look);
@@ -307,7 +323,7 @@ els["render"].addEventListener("click", async () => {
       save.textContent = "Save";
       save.className = "render-save";
       save.href = rendered;
-      save.download = `ensemble-look-${Date.now()}.png`;
+      save.download = `ensemble-look-${Date.now()}.${extForDataUrl(rendered)}`;
       wrap.append(img, close, save);
       els["renders"].prepend(wrap);
       wrap.scrollIntoView({ behavior: "smooth", block: "nearest" });

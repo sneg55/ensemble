@@ -61,6 +61,16 @@
       if (e.target === backdrop) closeModal();
     });
 
+    window.addEventListener(
+      "keydown",
+      (e) => {
+        if (e.key !== "Escape" || !backdrop.classList.contains("on")) return;
+        e.stopPropagation();
+        closeModal();
+      },
+      true
+    );
+
     let current = null;
 
     function openModal(title) {
@@ -118,7 +128,7 @@
         const save = document.createElement("a");
         save.textContent = "Save";
         save.href = res.image;
-        save.download = `ensemble-${item.handle}.png`;
+        save.download = `ensemble-${item.handle}.${extForDataUrl(res.image)}`;
         row.append(add, save);
         modal.append(img, row);
       } catch (e) {
@@ -167,7 +177,19 @@
       }
     }
 
+    function withSelectedVariant(item) {
+      const detailHandle = handleFromHref(location.pathname);
+      if (!detailHandle || detailHandle !== item.handle) return item;
+      const fromUrl = new URLSearchParams(location.search).get("variant");
+      const formField =
+        document.querySelector('form[action*="/cart/add"] [name="id"]') ||
+        document.querySelector('[name="id"]');
+      const variantId = fromUrl || (formField && formField.value) || null;
+      return variantId ? { ...item, variantId } : item;
+    }
+
     async function addToLook(button, item) {
+      const chosen = withSelectedVariant(item);
       const original = button.textContent;
       button.disabled = true;
       button.textContent = "Adding...";
@@ -175,11 +197,13 @@
         const res = await chrome.runtime.sendMessage({
           type: "overlayAddToLook",
           origin: location.origin,
-          handle: item.handle,
-          fallbackImage: item.image
+          handle: chosen.handle,
+          variantId: chosen.variantId || null,
+          fallbackImage: chosen.image
         });
         if (res && res.ok) {
           button.textContent = `In look (${res.count})`;
+          panelLinkRow();
         } else {
           button.textContent = errorText(res).slice(0, 40);
           button.disabled = false;
@@ -189,6 +213,33 @@
         button.disabled = false;
       }
       if (button.textContent === "Adding...") button.textContent = original;
+    }
+
+    function extForDataUrl(dataUrl) {
+      const mime = dataUrl.slice(5, dataUrl.indexOf(";"));
+      if (mime === "image/jpeg") return "jpg";
+      if (mime === "image/webp") return "webp";
+      return "png";
+    }
+
+    function panelLinkRow() {
+      if (modal.querySelector(".panel-link")) return;
+      const row = document.createElement("div");
+      row.className = "row panel-link";
+      const open = document.createElement("button");
+      open.textContent = "Open Ensemble panel";
+      open.addEventListener("click", async () => {
+        const res = await chrome.runtime.sendMessage({ type: "openSidePanel" });
+        if (!res || !res.ok) {
+          const note = document.createElement("div");
+          note.className = "msg";
+          note.textContent =
+            "Open the Ensemble side panel from the puzzle-piece toolbar menu to see your look.";
+          row.replaceWith(note);
+        }
+      });
+      row.appendChild(open);
+      modal.appendChild(row);
     }
 
     function errorText(res) {
@@ -205,7 +256,7 @@
       render.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (current) runRender(current);
+        if (current) runRender(withSelectedVariant(current));
       });
       const suggest = document.createElement("button");
       suggest.textContent = "Suggest matches";
