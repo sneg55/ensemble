@@ -27,7 +27,13 @@ carts filled across every store involved.
 
 Shopify storefronts register native agent tools on `document.modelContext` and
 `navigator.modelContext` (`search_catalog`, `get_product`, `update_cart`, `get_cart`,
-and others). Ensemble is the agent on the other side of that contract.
+and others). Ensemble is the agent on the other side of that contract, and the use
+case is the shape WebMCP was made for: the page declares what an agent may do here,
+and the agent composes those grants across origins into one task. The person makes
+the taste decisions, which jeans and which size; Ensemble does the cross-store
+bookkeeping, resolving choices to in-stock variants and filling carts on multiple
+origins in one action; the storefront's registered tools draw the boundary of what
+the agent may touch.
 
 `content/mcp-main.js` runs in the page's MAIN world at `document_start`. When the
 browser provides the WebMCP API it wraps `modelContext.registerTool` to capture each
