@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ensemble, compose a purchasable look across Shopify stores</title>
+<meta name="description" content="Ensemble is a Chrome extension: try clothes on your own photo, mix items from live Shopify catalogs across stores, and add every piece to its cart in one click.">
+<link rel="icon" href="img/favicon.png">
+<meta property="og:title" content="Ensemble">
+<meta property="og:description" content="Compose a purchasable look across Shopify stores: try it on, mix and match, add every piece to its cart.">
+<meta property="og:image" content="https://ensemble-dhf.pages.dev/img/render.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#221a1d;
+  --muted:#6f6266;
+  --cream:#faf6f1;
+  --paper:#fffdfa;
+  --maroon:#7b1e3a;
+  --maroon-dark:#5e142b;
+  --line:#e7ddd4;
+  --serif:"Fraunces",Georgia,serif;
+  --sans:"Inter",-apple-system,system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);color:var(--ink);background:var(--cream);line-height:1.6;font-size:16px}
+img{max-width:100%;display:block}
+a{color:var(--maroon)}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
+.wordmark{font-family:var(--serif);font-weight:600;font-size:22px;color:var(--ink);text-decoration:none;letter-spacing:.01em}
+nav .links{display:flex;gap:26px;align-items:center}
+nav .links a{color:var(--muted);text-decoration:none;font-size:14px;font-weight:500}
+nav .links a:hover{color:var(--ink)}
+.btn{display:inline-block;background:var(--maroon);color:#fff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 24px;border-radius:999px;transition:background .15s}
+.btn:hover{background:var(--maroon-dark)}
+.btn.small{padding:9px 18px;font-size:14px}
+.btn.ghost{background:transparent;color:var(--maroon);border:1.5px solid var(--maroon)}
+.btn.ghost:hover{background:var(--maroon);color:#fff}
+.hero{padding:64px 0 40px;display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
+.kicker{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--maroon);margin-bottom:18px}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(34px,4.6vw,54px);line-height:1.08;letter-spacing:-.01em;margin-bottom:22px}
+.hero p.lede{font-size:18px;color:var(--muted);max-width:44ch;margin-bottom:30px}
+.hero .cta-row{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.hero .cta-note{font-size:13px;color:var(--muted)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.pair figure{background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 20px 50px -30px rgba(60,20,35,.35)}
+.pair figure:last-child{transform:translateY(28px)}
+.pair img{aspect-ratio:5/6;object-fit:cover;object-position:top}
+.pair figcaption{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:10px 14px;background:var(--paper)}
+.claims{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--paper)}
+.claims .wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;padding-top:26px;padding-bottom:26px}
+.claims div{font-size:14px;font-weight:500}
+.claims span{display:block;font-size:12px;color:var(--muted);font-weight:400;margin-top:3px}
+section{padding:84px 0}
+h2{font-family:var(--serif);font-weight:600;font-size:clamp(26px,3.2vw,38px);line-height:1.15;margin-bottom:14px;letter-spacing:-.01em}
+.section-lede{color:var(--muted);max-width:60ch;margin-bottom:44px;font-size:17px}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
+.steps .n{font-family:var(--serif);font-size:30px;color:var(--maroon);margin-bottom:10px}
+.steps h3{font-size:16px;margin-bottom:6px}
+.steps p{font-size:14px;color:var(--muted)}
+.shot{background:var(--paper);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 30px 70px -40px rgba(60,20,35,.4)}
+.shot figcaption{padding:14px 18px;font-size:14px;color:var(--muted);border-top:1px solid var(--line)}
+.shot figcaption strong{color:var(--ink);font-weight:600}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:8px}
+.split{display:grid;grid-template-columns:5fr 4fr;gap:56px;align-items:center}
+.split ul{list-style:none;margin-top:20px}
+.split li{padding-left:26px;position:relative;margin-bottom:14px;font-size:15px;color:var(--muted)}
+.split li::before{content:"";position:absolute;left:0;top:9px;width:10px;height:10px;border-radius:50%;background:var(--maroon)}
+.split li strong{color:var(--ink)}
+.dark{background:var(--ink);color:#efe8ea}
+.dark h2{color:#fff}
+.dark p{color:#b9aab0}
+.dark .code{font-family:ui-monospace,Menlo,monospace;font-size:13px;color:#e8c9d4;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:2px 8px;white-space:nowrap}
+.toolgrid{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}
+.install ol{margin:26px 0 0 20px;max-width:62ch}
+.install li{margin-bottom:14px;font-size:15px}
+.install li span{color:var(--muted)}
+.install code{font-family:ui-monospace,Menlo,monospace;font-size:13.5px;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:2px 7px}
+footer{border-top:1px solid var(--line);padding:36px 0 48px}
+footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+footer a{color:var(--muted)}
+@media(max-width:860px){
+  .hero{grid-template-columns:1fr;gap:44px;padding-top:36px}
+  .claims .wrap{grid-template-columns:repeat(2,1fr)}
+  .steps{grid-template-columns:repeat(2,1fr)}
+  .duo{grid-template-columns:1fr}
+  .split{grid-template-columns:1fr;gap:36px}
+  nav .links a:not(.btn){display:none}
+  section{padding:60px 0}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<nav>
+  <a class="wordmark" href="#">Ensemble</a>
+  <div class="links">
+    <a href="#how">How it works</a>
+    <a href="#onpage">On the page</a>
+    <a href="#privacy">Privacy</a>
+    <a class="btn small" href="#install">Get the extension</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div>
+    <div class="kicker">A Chrome extension for Shopify stores</div>
+    <h1>One look, many stores, every piece real.</h1>
+    <p class="lede">Ensemble composes a purchasable outfit across Shopify stores: see it rendered on your own photo, get suggestions from the live catalog, and add every piece to its store's cart in one click.</p>
+    <div class="cta-row">
+      <a class="btn" href="#install">Get the extension</a>
+      <span class="cta-note">Free, open source, no account</span>
+    </div>
+  </div>
+  <div class="pair">
+    <figure>
+      <img src="img/model.jpg" alt="A photo of the shopper standing against a studio wall" width="880" height="1173">
+      <figcaption>Your photo</figcaption>
+    </figure>
+    <figure>
+      <img src="img/render.jpg" alt="The same person rendered wearing a black wrap dress, bangles and sneakers from the look" width="1024" height="1024">
+      <figcaption>The look, rendered</figcaption>
+    </figure>
+  </div>
+</header>
+</div>
+
+<div class="claims">
+  <div class="wrap">
+    <div>Real variants<span>exact size and color, live stock</span></div>
+    <div>Cross-store looks<span>one total across every catalog</span></div>
+    <div>Native checkout<span>each store's own cart and flow</span></div>
+    <div>No server<span>everything runs in your browser</span></div>
+  </div>
+</div>
+
+<div class="wrap">
+<section id="how">
+  <h2>How it works</h2>
+  <p class="section-lede">Try-on extensions paste a product image on your photo and stop. Ensemble knows what the item is: the store's live catalog, the exact variant, its price and stock, and the cart that sells it.</p>
+  <div class="steps">
+    <div>
+      <div class="n">1</div>
+      <h3>Set your photo</h3>
+      <p>Once, in the side panel. It stays in your browser's local storage.</p>
+    </div>
+    <div>
+      <div class="n">2</div>
+      <h3>Browse any Shopify store</h3>
+      <p>The catalog loads automatically, and every store you visit becomes a chip in the panel.</p>
+    </div>
+    <div>
+      <div class="n">3</div>
+      <h3>Build the look</h3>
+      <p>Add pieces from one store or several. Suggestions draw on every catalog loaded this session.</p>
+    </div>
+    <div>
+      <div class="n">4</div>
+      <h3>Render, then buy</h3>
+      <p>See the whole look on you, fill every store's cart in one click, and check out natively.</p>
+    </div>
+  </div>
+</section>
+
+<section id="onpage">
+  <h2>It meets you on the store page</h2>
+  <p class="section-lede">No panel required. Hover any product tile for two buttons: Render on me and Suggest matches. On a product page, the pill picks up the exact size and color you selected.</p>
+  <div class="duo">
+    <figure class="shot">
+      <img src="img/ov-render.jpg" alt="A product page with an Ensemble modal showing the shopper rendered wearing the jeans from that page" width="1280" height="900">
+      <figcaption><strong>Render on me.</strong> The jeans from this page, on your photo, without leaving the store.</figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="img/ov-suggest.jpg" alt="A product page with an Ensemble modal suggesting a corset top, jacket, sandals and belt that go with the jeans" width="1280" height="900">
+      <figcaption><strong>Suggest matches.</strong> Pieces from the store's live inventory that complete the outfit, each one click from the look.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <div class="split">
+    <div>
+      <h2>A look, not a moodboard</h2>
+      <p class="section-lede" style="margin-bottom:0">Every item in an Ensemble look is a specific, in-stock variant with a live price. The panel keeps one running total across stores, and Add all to carts fills each store's cart with exactly those variants.</p>
+      <ul>
+        <li><strong>Mix stores freely.</strong> A dress from one catalog, sneakers from another, one look, one total.</li>
+        <li><strong>Selected variant travels.</strong> Pick US 2 on the product page and US 2 is what lands in the cart.</li>
+        <li><strong>Checkout stays native.</strong> Ensemble fills the carts; you finish each one in the store's own checkout.</li>
+      </ul>
+    </div>
+    <figure class="shot">
+      <img src="img/look.jpg" alt="The Ensemble side panel showing a look with a dress and sneakers from two stores and a combined total" width="1280" height="640">
+      <figcaption><strong>$229.00 across 2 stores.</strong> A dress from one catalog, wool runners from another.</figcaption>
+    </figure>
+  </div>
+</section>
+</div>
+
+<div class="dark">
+<div class="wrap">
+<section>
+  <h2>Under the hood: the store's own tools</h2>
+  <p class="section-lede" style="max-width:66ch">Shopify storefronts expose native agent tools through the emerging WebMCP standard, and Ensemble speaks to them directly: catalog search, product lookup, cart updates, all through the store's supported surface rather than scraping. Stores without them fall back to the public catalog and cart endpoints. Either way, what you see is what the store actually sells.</p>
+  <div class="toolgrid">
+    <span class="code">search_catalog</span>
+    <span class="code">get_product</span>
+    <span class="code">update_cart</span>
+    <span class="code">get_cart</span>
+    <span class="code">/products.json</span>
+    <span class="code">/cart/add.js</span>
+  </div>
+</section>
+</div>
+</div>
+
+<div class="wrap">
+<section id="privacy">
+  <h2>Private by construction</h2>
+  <p class="section-lede" style="margin-bottom:0">There is no Ensemble server and no account. Your photo and your Gemini API key live in local extension storage. The only network calls are to the store you are browsing and, for renders and suggestions, to Google's Gemini API with your own key.</p>
+</section>
+
+<section id="install" class="install">
+  <h2>Get Ensemble</h2>
+  <p class="section-lede" style="margin-bottom:0">Ensemble is in developer preview, installed as an unpacked extension. Two minutes, no build step.</p>
+  <ol>
+    <li><a href="ensemble.zip">Download ensemble.zip</a> and unzip it.</li>
+    <li>Open <code>chrome://extensions</code>, turn on Developer mode, click <em>Load unpacked</em>, and pick the folder.</li>
+    <li>Open the extension options and paste a Gemini API key. <span>Free at aistudio.google.com/apikey; it stays on your machine and powers suggestions and try-on renders.</span></li>
+    <li>Visit any Shopify store and click the Ensemble icon. <span>Set your photo, build the look, render it, add all to carts.</span></li>
+  </ol>
+  <p style="margin-top:30px"><a class="btn" href="ensemble.zip">Download ensemble.zip</a></p>
+</section>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div>Ensemble 0.1.0, an experiment by <a href="https://sawinyh.com">Nick Sawinyh</a></div>
+    <div>Screenshots show a live demo run on a real storefront; the model photo is synthetic.</div>
+  </div>
+</footer>
+
+</body>
+</html>
