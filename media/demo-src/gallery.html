@@ -1,0 +1,106 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  :root {
+    --bg: #faf6f1; --bg2: #f3ece3; --ink: #221a1d; --dim: #6f6266;
+    --accent: #7b1e3a; --line: #e7ddd4; --card: #fffdfa;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; }
+  body { background: radial-gradient(1300px 800px at 18% -12%, var(--bg2) 0%, var(--bg) 55%);
+         color: var(--ink); font-family: Georgia, "Times New Roman", serif; }
+  #stage { width: 1920px; height: 1080px; position: relative; padding: 90px 110px; display: flex; flex-direction: column; }
+  .kicker { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 26px; letter-spacing: 5px;
+            text-transform: uppercase; color: var(--accent); font-weight: 600; margin-bottom: 18px; }
+  h1 { font-size: 84px; font-weight: 600; letter-spacing: -1px; line-height: 1.04; margin-bottom: 22px; }
+  .sub { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 30px; color: var(--dim); max-width: 900px; line-height: 1.5; }
+  .row { display: flex; gap: 44px; align-items: center; flex: 1; min-height: 0; }
+  .col { display: flex; flex-direction: column; }
+  .shot { background: var(--card); border: 1px solid var(--line); border-radius: 18px; overflow: hidden;
+          box-shadow: 0 34px 80px -30px rgba(60, 20, 35, .35); }
+  .shot img { display: block; }
+  .cap { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 22px; color: var(--dim);
+         padding: 16px 22px; border-top: 1px solid var(--line); background: var(--card); }
+  .cap b { color: var(--ink); }
+  .foot { position: absolute; left: 110px; right: 110px; bottom: 46px; display: flex; justify-content: space-between;
+          font-family: "Helvetica Neue", Arial, sans-serif; font-size: 24px; color: var(--dim); }
+  .foot .brand { color: var(--ink); font-family: Georgia, serif; font-weight: 600; font-size: 26px; }
+  .dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); margin-right: 12px; }
+  .bullets { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 30px; line-height: 1.55; color: var(--ink); }
+  .bullets div { margin-bottom: 22px; padding-left: 34px; position: relative; }
+  .bullets div::before { content: ""; position: absolute; left: 0; top: 13px; width: 14px; height: 14px;
+                         border-radius: 50%; background: var(--accent); }
+  .bullets span { color: var(--dim); }
+  .arrow { font-size: 90px; color: var(--accent); }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+  const q = new URLSearchParams(location.search).get("scene") || "hero";
+  const stage = document.getElementById("stage");
+  const foot = `<div class="foot"><span class="brand"><span class="dot"></span>Ensemble</span><span>ensemble-dhf.pages.dev · github.com/sneg55/ensemble</span></div>`;
+  const T = {
+    hero: `
+      <div class="kicker">A Chrome extension for Shopify stores · built on WebMCP</div>
+      <h1>One look, many stores,<br>every piece real.</h1>
+      <div class="sub">Try it on your own photo, mix live catalogs, and fill every store's cart in one click, through the tools the stores themselves publish.</div>
+      <div class="row" style="margin-top: 40px; justify-content: center;">
+        <div class="shot"><img src="gallery-assets/model.jpg" style="height: 520px;"></div>
+        <div class="arrow">&rarr;</div>
+        <div class="shot"><img src="gallery-assets/render.jpg" style="height: 520px;"></div>
+      </div>
+      ${foot}`,
+    onpage: `
+      <div class="kicker">On the store's own pages</div>
+      <h1 style="font-size: 62px; margin-bottom: 8px;">Render on me. Suggest matches.</h1>
+      <div class="row" style="margin-top: 20px; align-items: flex-start; justify-content: center;">
+        <div class="shot" style="width: 460px;"><img src="gallery-assets/shot-render.jpg" style="width: 100%; height: 560px; object-fit: cover; object-position: top;">
+          <div class="cap"><b>Render on me.</b> This product, on your photo, without leaving the store.</div></div>
+        <div class="col" style="width: 760px; gap: 30px;">
+          <div class="shot"><img src="gallery-assets/shot-suggest.jpg" style="width: 100%;">
+            <div class="cap"><b>Suggest matches.</b> Real, in-stock pieces from the live catalog.</div></div>
+          <div class="bullets">
+            <div>Hover any product tile, or use the pill on a product page</div>
+            <div>The size you pick is the size that travels</div>
+          </div>
+        </div>
+      </div>
+      ${foot}`,
+    look: `
+      <div class="row" style="gap: 90px;">
+        <div class="col" style="flex: 1;">
+          <div class="kicker">One look across stores</div>
+          <h1 style="font-size: 72px;">A look,<br>not a moodboard.</h1>
+          <div class="bullets" style="margin-top: 30px;">
+            <div>Jeans and a top from one store, wool runners from another</div>
+            <div>Every item a specific, in-stock variant with a live price</div>
+            <div>One running total: <span>$140.00 + $160.00 across two stores</span></div>
+          </div>
+        </div>
+        <div class="shot" style="width: 660px;"><img src="gallery-assets/look-col.png" style="width: 100%;"></div>
+      </div>
+      ${foot}`,
+    carts: `
+      <div class="kicker">One click, every cart</div>
+      <h1 style="font-size: 66px;">Both carts, filled in one motion.</h1>
+      <div class="row" style="margin-top: 34px; align-items: flex-start; justify-content: center;">
+        <div class="shot" style="width: 800px;"><img src="gallery-assets/ppcart.png" style="width: 100%;">
+          <div class="cap"><b>Store one.</b> The jeans landed in US 2, the size picked on the page.</div></div>
+        <div class="shot" style="width: 800px;"><img src="gallery-assets/abcart.png" style="width: 100%;">
+          <div class="cap"><b>Store two.</b> The wool runners, added through the store's own cart tool.</div></div>
+      </div>
+      ${foot}`,
+    tools: `
+      <div class="kicker">Under the hood</div>
+      <h1 style="font-size: 66px;">The store's own WebMCP tools.</h1>
+      <div class="sub" style="margin-bottom: 26px;">Shopify storefronts register ten native tools on document.modelContext. Ensemble captures them in the page and routes carts and lookups through them; a public-endpoint fallback covers the rest.</div>
+      <div class="shot" style="align-self: center; width: 1300px;"><img src="gallery-assets/tools-crop.png" style="width: 100%;"></div>
+      ${foot}`
+  };
+  stage.innerHTML = T[q];
+</script>
+</body>
+</html>
